@@ -117,6 +117,8 @@ Solr 主从同步是通过 Slave 周期性轮询来检查 Master 的版本，如
 ![348857920a50fb515d025af56f25578c.png](pics/indexdir.png)
 
 
+##### 注意事项
+如果主从的数据源配置的不一致，很可能导致从服务器无法同步索引数据。
 
 #### 在项目中使用 Solr
 
@@ -144,3 +146,45 @@ SolrNet：https://github.com/mausch/SolrNet
 ##### 在 Python 项目中使用 Solr
 
 PySolr：https://github.com/django-haystack/pysolr
+使用 `pip` 安装 pysolr：
+```shell
+pip install pysolr
+```
+简单的查询：
+```python
+# -*- coding: utf-8 -*-
+import pysolr
+
+SOLR_URL = 'http://localhost:8983/solr/posts'
+
+
+def add():
+    """
+    添加
+    """
+    solr = pysolr.Solr(SOLR_URL)
+    result = solr.add([
+        {
+            'id': '10000',
+            'post_title': 'test-title',
+            'post_name': 'test-name',
+            'post_excerpt': 'test-excerpt',
+            'post_content': 'test-content',
+            'post_date': '2019-06-18 14:56:55',
+        }
+    ])
+    print(result)
+
+def query():
+    """
+    查询
+    """
+    solr = pysolr.Solr(SOLR_URL)
+    results = solr.search('苹果')
+    print(results.docs)
+
+
+if __name__ == "__main__":
+    add()
+    query()
+```
