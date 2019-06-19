@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using SolrNetExample.Web.Document;
 
 namespace SolrNetExample.Web
 {
@@ -34,6 +35,8 @@ namespace SolrNetExample.Web
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            SolrNet.Startup.Init<PostDoc>("http://localhost:8983/solr/posts");
 
             app.UseMvc();
         }

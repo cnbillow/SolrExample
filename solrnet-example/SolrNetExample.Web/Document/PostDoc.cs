@@ -6,22 +6,29 @@ using System.Threading.Tasks;
 
 namespace SolrNetExample.Web.Document
 {
+
+    /// <summary>
+    /// 文章索引文档。
+    /// </summary>
+    [Serializable]
     public class PostDoc
     {
         [SolrUniqueKey("id")]
         public int Id { get; set; }
 
-        [SolrField("title")]
+        [SolrField("post_title")]
         public string Title { get; set; }
 
-        [SolrField("excerpt")]
-        public DateTime Excerpt { get; set; }
+        [SolrField("post_name")]
+        public string Name { get; set; }
 
-        [SolrField("content")]
+        [SolrField("post_excerpt")]
+        public string Excerpt { get; set; }
+
+        [SolrField("post_content")]
         public string Content { get; set; }
 
-        [SolrField("updatetime")]
-        public DateTime UpdateTime { get; set; }
-
+        [SolrField("post_date")]
+        public DateTime PostDate { get; set; }
     }
 }

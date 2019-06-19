@@ -2,7 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CommonServiceLocator;
 using Microsoft.AspNetCore.Mvc;
+using SolrNet;
+using SolrNetExample.Web.Document;
 
 namespace SolrNetExample.Web.Controllers
 {
@@ -41,5 +44,6 @@ namespace SolrNetExample.Web.Controllers
         public void Delete(int id)
         {
         }
+
     }
 }
