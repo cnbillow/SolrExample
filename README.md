@@ -117,8 +117,8 @@ Solr 主从同步是通过 Slave 周期性轮询来检查 Master 的版本，如
 ![348857920a50fb515d025af56f25578c.png](pics/indexdir.png)
 
 
-##### 注意事项
-如果主从的数据源配置的不一致，很可能导致从服务器无法同步索引数据。
+
+**注意事项：** 如果主从的数据源配置的不一致，很可能导致从服务器无法同步索引数据。
 
 #### 在项目中使用 Solr
 
@@ -133,15 +133,122 @@ SolrJ 是 Solr 的官方客户端，文档地址：[https://lucene.apache.org/so
     <version>7.7.2</version>
 </dependency>
 ```
-配置 `application.properties`：
-```properties
-solr.servers=http://192.168.1.25:8099/solr/,http://192.168.1.26:8099/solr/
+查询索引文档：
+```java
+    String keyword = "苹果";
+    Map<String, String> queryParamMap = new HashMap<String, String>();
+    queryParamMap.put("q", "*:*");
+    queryParamMap.put("fq", keyword);
+    MapSolrParams queryParams = new MapSolrParams(queryParamMap);
+    QueryResponse queryResponse = client.query("posts", queryParams);
+    SolrDocumentList results = queryResponse.getResults();
 ```
+添加和更新索引文档：
+```java
+    // 通过 属性 添加到索引中
+    SolrInputDocument doc = new SolrInputDocument();
+    doc.addField("id", "10000");
+    doc.addField("post_title", "test-title");
+    doc.addField("post_name", "test-name");
+    doc.addField("post_excerpt", "test-excerpt");
+    doc.addField("post_content", "test-content");
+    doc.addField("post_date", "2019-06-18 14:56:55");
+    client.add("posts", doc);
 
+    // 通过 Bean 添加到索引中
+    Post post = new Post();
+    post.setId(10001);
+    post.setPost_title("test-title-10001");
+    post.setPost_name("test-name");
+    post.setPost_excerpt("test-excerpt");
+    post.setPost_content("test-content");
+    post.setPost_date(new Date());
+    client.addBean("posts", post);
+
+    client.commit("posts");
+```
+具体代码可以参考我 GitHub 中的示例，这里就不详细列出了。
 
 ##### 在  DotNet 项目中使用 Solr
 
 SolrNet：https://github.com/mausch/SolrNet
+通过 Nuget 添加：
+```shell
+Install-Package SolrNet.Core
+```
+定义索引对象：
+```csharp
+    /// <summary>
+    /// 文章 doc。
+    /// </summary>
+    [Serializable]
+    public class PostDoc
+    {
+        [SolrUniqueKey("id")]
+        public int Id { get; set; }
+
+        [SolrField("post_title")]
+        public string Title { get; set; }
+
+        [SolrField("post_name")]
+        public string Name { get; set; }
+
+        [SolrField("post_excerpt")]
+        public string Excerpt { get; set; }
+
+        [SolrField("post_content")]
+        public string Content { get; set; }
+
+        [SolrField("post_date")]
+        public DateTime PostDate { get; set; }
+    }
+```
+添加或更新文档操作：
+```csharp
+    // 同步添加文档
+    solr.Add(
+        new PostDoc()
+        {
+            Id = 30001,
+            Name = "This SolrNet Name",
+            Title = "This SolrNet Title",
+            Excerpt = "This SolrNet Excerpt",
+            Content = "This SolrNet Content 30001",
+            PostDate = DateTime.Now
+        }
+    );
+    // 异步添加文档（更新）
+    await solr.AddAsync(
+        new PostDoc()
+        {
+            Id = 30001,
+            Name = "This SolrNet Name",
+            Title = "This SolrNet Title",
+            Excerpt = "This SolrNet Excerpt",
+            Content = "This SolrNet Content Updated 30001",
+            PostDate = DateTime.Now
+        }
+    );
+    // 提交
+    ResponseHeader responseHeader = await solr.CommitAsync();
+```
+删除文档操作：
+```csharp
+    // 使用文档 Id 删除
+    await solr.DeleteAsync("300001");
+    // 直接删除文档
+    await solr.DeleteAsync(new PostDoc()
+    {
+        Id = 30002,
+        Name = "This SolrNet Name",
+        Title = "This SolrNet Title",
+        Excerpt = "This SolrNet Excerpt",
+        Content = "This SolrNet Content 30002",
+        PostDate = DateTime.Now
+    });
+    // 提交
+    ResponseHeader responseHeader = await solr.CommitAsync();
+```
 
 ##### 在 Python 项目中使用 Solr
 
@@ -150,41 +257,92 @@ PySolr：https://github.com/django-haystack/pysolr
 ```shell
 pip install pysolr
 ```
-简单的查询：
+简单的操作：
 ```python
 # -*- coding: utf-8 -*-
 import pysolr
 
 SOLR_URL = 'http://localhost:8983/solr/posts'
 
-
 def add():
     """
     添加
     """
-    solr = pysolr.Solr(SOLR_URL)
     result = solr.add([
         {
-            'id': '10000',
-            'post_title': 'test-title',
-            'post_name': 'test-name',
-            'post_excerpt': 'test-excerpt',
-            'post_content': 'test-content',
+            'id': '20000',
+            'post_title': 'test-title-20000',
+            'post_name': 'test-name-20000',
+            'post_excerpt': 'test-excerpt-20000',
+            'post_content': 'test-content-20000',
+            'post_date': '2019-06-18 14:56:55',
+        },
+        {
+            'id': '20001',
+            'post_title': 'test-title-20001',
+            'post_name': 'test-name-20001',
+            'post_excerpt': 'test-excerpt-20001',
+            'post_content': 'test-content-20001',
             'post_date': '2019-06-18 14:56:55',
         }
     ])
-    print(result)
+    solr.commit()
+    results = solr.search(q='id: 20001')
+    print(results.docs)
+
+def delete():
+    """
+    删除
+    """
+    solr.delete(q='id: 20001')
+    solr.commit()
+    results = solr.search(q='id: 20001')
+    print(results.docs)
+
+def update():
+    """
+    更新
+    """
+    solr.add([
+        {
+            'id': '20000',
+            'post_title': 'test-title-updated',
+            'post_name': 'test-name-updated',
+            'post_excerpt': 'test-excerpt-updated',
+            'post_content': 'test-content-updated',
+            'post_date': '2019-06-18 15:00:00',
+        }
+    ])
+    solr.commit()   
+    results = solr.search(q='id: 20000')
+    print(results.docs)
 
 def query():
     """
     查询
     """
-    solr = pysolr.Solr(SOLR_URL)
     results = solr.search('苹果')
     print(results.docs)
 
-
 if __name__ == "__main__":
+    solr = pysolr.Solr(SOLR_URL)
     add()
+    delete()
+    update()
     query()
 ```
+需要注意的是在使用 `solr.add()` 和 `solr.delete` 方法以后需要执行一下 `solr.commit()` 方法，否则文档的变更不会提交。
+如果想获取添加或更新是否成功可以通过判断 `solr.commit()` 方法返回结果，`solr.commit()` 方法的返回结果是一个 xml 字符串：
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+    <response>
+        <lst name="responseHeader">
+        <int name="status">0</int>
+        <int name="QTime">44</int>
+    </lst>
+</response>
+```
+`status` 的值如果是 0 就表示提交成功了。
+#### 总结
+通过简单使用和测试，就会发现搜索结果并不是很精准，比如搜索“微软”这个关键字，搜索出来的数据中有完全不包含这个关键字的内容，所以要想让搜索结果更加准确就必须对 Sorl 进行调优，Solr 中还有很多高级的用法，例如设置字段的权重、自定义中文分词词库等等，有机会我会专门写一篇这样的文章来介绍这些功能。
+我在 `sql` 目录里提供了数据库脚本，方便大家创建测试数据，数据是以前做的一个小站从网上抓取过来的科技新闻。
