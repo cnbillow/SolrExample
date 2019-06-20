@@ -20,11 +20,40 @@ Solr 内置了 Jetty，所以不需要任何安装任何 Web 容器即可运行�
  .\solr.cmd stop -all
 ```
 #### 创建 Core
-schema.xml 文件：
+首先在 `server\solr` 文件夹中创建一个新的目录，然后将 `server\solr\configsets\_default` 下的 `conf` 目录复制到刚刚创建的文件夹。
+在浏览器中打开 `http://localhost:8983/solr/` 点击左侧的 `Core Admin` 添加 Core。
+![f42a5660b7a7e440347f847493d43ec2.png](en-resource://database/1272:1)
+`name` 和 `instanceDir` 都改成刚刚创建的目录名称。
 
-dataconfig.xml 文件的大致结构如下：
+创建好之后即可在左侧的 `Core Selector` 中找到这个 Core。
+
+现在一个 Core 就创建好了，在 Core 的面板里可以对其进行一些基本操作。
+
+Solr 的 Api 是支持通过调用接口添加数据的，但是在实际使用中我们都是从数据库中同步数据，所以我们需要为 Solr 配置数据源。
+![d7d95cabc10595ac06aa9089548184a9.png](en-resource://database/1278:1)
+在 `solrconfig.xml` 文件中找到如下内容：
+```xml
+  <!-- Request Handlers
+       http://wiki.apache.org/solr/SolrRequestHandler
+
+       Incoming queries will be dispatched to a specific handler by name
+       based on the path specified in the request.
+
+       If a Request Handler is declared with startup="lazy", then it will
+       not be initialized until the first request that uses it.
+    -->
+```
+添加一个 `requestHandler` 节点：
+```xml
+  <requestHandler name="/dataimport" class="solr.DataImportHandler">
+    <lst name="defaults">
+      <str name="config">data-config.xml</str>
+    </lst>
+  </requestHandler>
+```
+data-config.xml 文件的大致结构如下：
 ![c121b45e5a65a5ce68d1bd64709d1f63.png](pics/dataconfig.png)
-
+稍后会对 data-config.xml 文件进行详细介绍。
 #### 配置数据源
 
 ##### 使用 SQL Server 数据源
