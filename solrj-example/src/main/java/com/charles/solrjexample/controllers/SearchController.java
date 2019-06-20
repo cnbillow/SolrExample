@@ -1,16 +1,14 @@
 package com.charles.solrjexample.controllers;
 
-import com.charles.solrjexample.common.PageList;
-import com.charles.solrjexample.common.Result;
-import com.charles.solrjexample.common.ResultCodeEnum;
+import com.charles.solrjexample.common.ResponsePagedResult;
+import com.charles.solrjexample.common.ResponseResult;
+import com.charles.solrjexample.common.ResponseResultCodeEnum;
 import com.charles.solrjexample.domain.Post;
 import org.apache.solr.client.solrj.SolrClient;
-import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.UpdateResponse;
-import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.params.MapSolrParams;
@@ -32,8 +30,8 @@ public class SearchController {
      * 添加和更新
      */
     @GetMapping("/add")
-    public Result add() throws IOException, SolrServerException {
-        Result result = new Result();
+    public ResponseResult add() throws IOException, SolrServerException {
+        ResponseResult responseResult = new ResponseResult();
 
         SolrInputDocument doc = new SolrInputDocument();
         doc.addField("id", "10000");
@@ -56,18 +54,18 @@ public class SearchController {
         UpdateResponse updateResponse = client.commit("posts");
         int status = updateResponse.getStatus();
         if (status != 0) {
-            result.setMsg("添加或更新索引失败！");
-            result.setCode(ResultCodeEnum.ERROR.getCode());
+            responseResult.setMsg("添加或更新索引失败！");
+            responseResult.setCode(ResponseResultCodeEnum.ERROR.getCode());
         }
-        return result;
+        return responseResult;
     }
 
     /**
      * 删除
      */
     @GetMapping("/delete")
-    public Result delete() throws IOException, SolrServerException {
-        Result result = new Result();
+    public ResponseResult delete() throws IOException, SolrServerException {
+        ResponseResult responseResult = new ResponseResult();
         // 通过查询条件删除
         client.deleteByQuery("posts", "id:10000");
         // 通过 id 删除
@@ -75,17 +73,17 @@ public class SearchController {
         UpdateResponse updateResponse = client.commit("posts");
         int status = updateResponse.getStatus();
         if (status != 0) {
-            result.setMsg("添加或更新索引失败！");
-            result.setCode(ResultCodeEnum.ERROR.getCode());
+            responseResult.setMsg("添加或更新索引失败！");
+            responseResult.setCode(ResponseResultCodeEnum.ERROR.getCode());
         }
-        return result;
+        return responseResult;
     }
 
     /**
      * 查询
      */
     @GetMapping("/query")
-    public <T> PageList<T> query(String keyword, Integer pageIndex, Integer pageSize) throws IOException, SolrServerException {
+    public <T> ResponsePagedResult<T> query(String keyword, Integer pageIndex, Integer pageSize) throws IOException, SolrServerException {
         if (keyword == null) {
             keyword = "";
         }
@@ -95,7 +93,7 @@ public class SearchController {
         if (pageSize == null) {
             pageSize = 10;
         }
-        PageList<T> pageList = new PageList<T>();
+        ResponsePagedResult<T> responsePagedResult = new ResponsePagedResult<T>();
         Map<String, String> queryParamMap = new HashMap<String, String>();
         queryParamMap.put("q", "*:*");
         queryParamMap.put("fq", keyword);
@@ -105,11 +103,11 @@ public class SearchController {
         MapSolrParams queryParams = new MapSolrParams(queryParamMap);
         QueryResponse queryResponse = client.query("posts", queryParams);
         SolrDocumentList results = queryResponse.getResults();
-        pageList.setPageIndex((int) results.getStart());
-        pageList.setPageSize(results.size());
-        pageList.setCount((int) results.getNumFound());
-        pageList.setList((List<T>) results);
-        return pageList;
+        responsePagedResult.setPageIndex((int) results.getStart());
+        responsePagedResult.setPageSize(results.size());
+        responsePagedResult.setCount((int) results.getNumFound());
+        responsePagedResult.setList((List<T>) results);
+        return responsePagedResult;
     }
 
     /**

@@ -8,7 +8,7 @@ import java.util.List;
  *
  * @param <T>
  */
-public class PageList<T> extends Result {
+public class ResponsePagedResult<T> extends ResponseResult {
     /**
      * 列表
      */
@@ -28,7 +28,7 @@ public class PageList<T> extends Result {
 
     private Object Extend;
 
-    public PageList() {
+    public ResponsePagedResult() {
 
     }
 

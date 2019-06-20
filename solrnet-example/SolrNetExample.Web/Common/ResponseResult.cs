@@ -20,11 +20,22 @@ namespace SolrNetExample.Web.Common
         /// <summary>
         /// 初始化 <see cref="ResponseResult"/> 类的新实例。
         /// </summary>
-        public ResponseResult()
+        public ResponseResult() : this(ResponseStatus.SUCCEED, new object(), string.Empty)
         {
-            Status = 0;
-            ResponseData = new object();
-            Error = String.Empty;
+
+        }
+
+        /// <summary>
+        /// 使用响应状态值和响应错误信息初始化 <see cref="ResponseResult"/> 类的新实例。
+        /// </summary>
+        /// <param name="status">响应状态值。</param>
+        /// <param name="error">响应错误信息。</param>
+        public ResponseResult(int status, object extend, string error)
+        {
+            Status = status;
+            Data = new object();
+            Extend = extend;
+            Error = error;
         }
 
         #endregion
@@ -43,7 +54,12 @@ namespace SolrNetExample.Web.Common
         /// <summary>
         /// 获取或设置响应成功的数据信息。
         /// </summary>
-        public object ResponseData { get; set; }
+        public object Data { get; set; }
+
+        /// <summary>
+        /// 扩展。
+        /// </summary>
+        public object Extend { get; set; }
 
         /// <summary>
         /// 获取或设置响应错误信息。
@@ -63,23 +79,23 @@ namespace SolrNetExample.Web.Common
         /// <summary>
         /// 获取或设置响应成功的数据信息。
         /// </summary>
-        public new T ResponseData { get; set; }
+        public new T Data { get; set; }
 
         /// <summary>
         /// 初始化 <see cref="ResponseResult{T}"/> 类的新实例。
         /// </summary>
-        public ResponseResult(T responseData) : base()
+        public ResponseResult(T data) : base()
         {
-            ResponseData = responseData;
+            Data = data;
         }
         /// <summary>
         /// 使用指定的参数初始化 <see cref="ResponseResult{T}"/> 类的新实例。
         /// </summary>
-        public ResponseResult(int status, string error, T responseData)
+        public ResponseResult(int status, string error, T data)
         {
             Status = status;
             Error = error;
-            ResponseData = responseData;
+            Data = data;
         }
     }
 }

@@ -1,6 +1,6 @@
 package com.charles.solrjexample.common;
 
-public enum ResultCodeEnum {
+public enum ResponseResultCodeEnum {
     /**
      * 默认成功。
      */
@@ -10,7 +10,7 @@ public enum ResultCodeEnum {
      */
     ERROR(400, "请求失败");
 
-    private ResultCodeEnum(int code, String description) {
+    private ResponseResultCodeEnum(int code, String description) {
         this.code = code;
         this.description = description;
     }

@@ -6,16 +6,16 @@ package com.charles.solrjexample.common;
  *
  * @param <T>
  */
-public class Result {
-    public Result() {
+public class ResponseResult {
+    public ResponseResult() {
 
     }
 
-    public Result(boolean result) {
+    public ResponseResult(boolean result) {
         this.result = result;
     }
 
-    public Result(boolean result, String msg) {
+    public ResponseResult(boolean result, String msg) {
         this.result = result;
         this.msg = msg;
     }
@@ -23,7 +23,7 @@ public class Result {
     /**
      * 返回代码，默认 200 为应答成功
      */
-    private int code = ResultCodeEnum.SUCCESS.getCode();
+    private int code = ResponseResultCodeEnum.SUCCESS.getCode();
     /**
      * 返回结果
      */

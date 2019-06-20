@@ -1,19 +1,13 @@
 ﻿using System;
-using System.Configuration;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Web;
 using CommonServiceLocator;
 using Microsoft.AspNetCore.Mvc;
 using SolrNet;
 using SolrNet.Commands.Parameters;
-using SolrNet.Exceptions;
-using SolrNet.Impl;
 using SolrNetExample.Web.Common;
 using SolrNetExample.Web.Document;
+using SolrNetExample.Web.Paging;
 
 namespace SolrNetExample.Web.Controllers
 {
@@ -100,29 +94,35 @@ namespace SolrNetExample.Web.Controllers
             return response;
         }
 
+
         /// <summary>
         /// 查询索引。
         /// </summary>
         /// <returns></returns>
-        [HttpGet("query")]
-        public async Task<ResponseResult> Query()
+        [HttpGet("query/{pageIndex}/{pageSize}")]
+        public async Task<IActionResult> QueryPagingAsync(int pageIndex = 0, int pageSize = 10)
         {
             // 直接传入查询条件
             SolrQueryResults<PostDoc> postDocs = solr.Query("id:30000");
-
+            // 
             SolrQuery solrQuery = new SolrQuery("苹果");
-
-            QueryOptions queryOptions = new QueryOptions();
-            //queryOptions.AddFields("苹果", "手机");
-            queryOptions.Start = 0;
-            queryOptions.Rows = 10;
+            QueryOptions queryOptions = new QueryOptions
+            {
+                // 高亮关键字
+                Highlight = new HighlightingParameters
+                {
+                    Fields = new List<string> { "post_title" },
+                    BeforeTerm = "<font color='red'><b>",
+                    AfterTerm = "</b></font>"
+                },
+                // 分页
+                StartOrCursor = new StartOrCursor.Start(pageIndex * pageSize),
+                Rows = pageSize
+            };
             SolrQueryResults<PostDoc> docs = await solr.QueryAsync(solrQuery, queryOptions);
-            ResponseResult<SolrQueryResults<PostDoc>> response = new ResponseResult<SolrQueryResults<PostDoc>>(ResponseStatus.SUCCEED, string.Empty, docs);
-            //if (responseHeader.Status == 0)
-            //{
-            //    response.Status = ResponseStatus.SUCCEED;
-            //}
-            return response;
+            var highlights = docs.Highlights;
+            return Ok(new PagedList<PostDoc>(ResponseStatus.SUCCEED, string.Empty, docs, highlights, pageIndex, pageSize, docs.NumFound));
         }
+
     }
 }
