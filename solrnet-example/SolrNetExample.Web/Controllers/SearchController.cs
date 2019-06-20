@@ -96,15 +96,33 @@ namespace SolrNetExample.Web.Controllers
 
 
         /// <summary>
-        /// 查询索引。
+        /// 查询并排序。
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("ordering")]
+        public async Task<IActionResult> QueryOrdering()
+        {
+            // 排序
+            ICollection<SortOrder> sortOrders = new List<SortOrder>() {
+                new SortOrder("id", Order.DESC)
+            };
+            // 使用查询条件并排序
+            SolrQueryResults<PostDoc> docs = await solr.QueryAsync("post_title:索尼", sortOrders);
+            return Ok(new ResponseResult<SolrQueryResults<PostDoc>>(ResponseStatus.SUCCEED, string.Empty, docs));
+        }
+
+        /// <summary>
+        /// 分页查询。
         /// </summary>
         /// <returns></returns>
         [HttpGet("query/{pageIndex}/{pageSize}")]
         public async Task<IActionResult> QueryPagingAsync(int pageIndex = 0, int pageSize = 10)
         {
-            // 直接传入查询条件
-            SolrQueryResults<PostDoc> postDocs = solr.Query("id:30000");
-            // 
+
+            // 使用条件查询
+            SolrQueryResults<PostDoc> posts = solr.Query(new SolrQueryByField("id", "30000"));
+
+            // 高级查询
             SolrQuery solrQuery = new SolrQuery("苹果");
             QueryOptions queryOptions = new QueryOptions
             {
@@ -121,7 +139,7 @@ namespace SolrNetExample.Web.Controllers
             };
             SolrQueryResults<PostDoc> docs = await solr.QueryAsync(solrQuery, queryOptions);
             var highlights = docs.Highlights;
-            return Ok(new PagedList<PostDoc>(ResponseStatus.SUCCEED, string.Empty, docs, highlights, pageIndex, pageSize, docs.NumFound));
+            return Ok(new PagedList<PostDoc>(ResponseStatus.SUCCEED, string.Empty, docs, pageIndex, pageSize, docs.NumFound, highlights));
         }
 
     }

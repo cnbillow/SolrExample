@@ -21,7 +21,7 @@ namespace SolrNetExample.Web.Paging
         /// <param name="source">指定的数据源。</param>
         /// <param name="pageIndex">指定的分页索引。</param>
         /// <param name="pageSize">指定的分页大小。</param>
-        public PagedList(int status, string error, IQueryable<T> source, object extend, int pageIndex, int pageSize) : base(status, extend, error)
+        public PagedList(int status, string error, IQueryable<T> source, int pageIndex, int pageSize, object extend = null) : base(status, extend, error)
         {
             Data = new List<T>();
             //Status = status;
@@ -44,7 +44,7 @@ namespace SolrNetExample.Web.Paging
         /// <param name="source">指定的数据源。</param>
         /// <param name="pageIndex">指定的分页索引。</param>
         /// <param name="pageSize">指定的分页大小。</param>
-        public PagedList(int status, string error, IList<T> source, object extend, int pageIndex, int pageSize, int totalCount) : base(status, extend, error)
+        public PagedList(int status, string error, IList<T> source, int pageIndex, int pageSize, int totalCount, object extend = null) : base(status, extend, error)
         {
             Data = new List<T>();
             //Status = status;
@@ -68,7 +68,7 @@ namespace SolrNetExample.Web.Paging
         /// <param name="pageIndex">指定的分页索引。</param>
         /// <param name="pageSize">指定的分页大小。</param>
         /// <param name="totalCount">记录总数。</param>
-        public PagedList(int status, string error, IEnumerable<T> source, object extend, int pageIndex, int pageSize, int totalCount) : base(status, extend, error)
+        public PagedList(int status, string error, IEnumerable<T> source, int pageIndex, int pageSize, int totalCount, object extend = null) : base(status, extend, error)
         {
             Data = new List<T>();
 

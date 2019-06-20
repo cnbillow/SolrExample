@@ -11,7 +11,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Serialization;
 using SolrNetExample.Web.Document;
-using SolrNetExample.Web.Extensions;
 
 namespace SolrNetExample.Web
 {

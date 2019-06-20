@@ -1,4 +1,5 @@
 ## Solr 安装与部署
+
 #### 前言
 
 Solr 是一种可供企业使用的、基于 Lucene 的搜索服务器，它支持层面搜索、命中醒目显示和多种输出格式。在这篇文章中，将介绍 Solr 并展示如何轻松地将其表现优异的全文本搜索功能加入到 Web 应用程序中。
@@ -9,6 +10,7 @@ Solr 是一种可供企业使用的、基于 Lucene 的搜索服务器，它支�
 
 #### 安装
 Solr 内置了 Jetty，所以不需要任何安装任何 Web 容器即可运行。直接通过命令行就可以启动。
+
 启动 Solr：
 ```shell
  .\solr.cmd start
@@ -28,7 +30,9 @@ dataconfig.xml 文件的大致结构如下：
 ##### 使用 SQL Server 数据源
 从[微软官网](
 https://docs.microsoft.com/zh-cn/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server?view=sql-server-2017)下载 SQL Server 的 Microsoft SQL Server JDBC 驱动程序 4.1 驱动，复制到 `server\solr-webapp\webapp\WEB-INF\lib` 目录下。
+
 这里需要注意的是把在下载的文件重命名为 `sqljdbc4.jar`，我之前没有改名死活加载不上。
+
 使用 `com.microsoft.sqlserver.jdbc.SQLServerDriver` 驱动配置数据源：
 ```xml
 <dataSource name="postData" driver="com.microsoft.sqlserver.jdbc.SQLServerDriver" url="jdbc:sqlserver://127.0.0.1:1433;SelectMethod=Cursor;DatabaseName=post;useLOBs=false;loginTimeout=60" user="charlestest" password="12345678" />
@@ -96,8 +100,8 @@ entity 中的一些常用属性：
 * parentDeltaQuery：从本 entity 中的 deltaquery 中取得参数。
 
 dataSource 中 batchSize 属性的作用是可以在批量导入的时候限制连接数量。
-配置完成后重新加载一下 Core。
 
+配置完成后重新加载一下 Core。
 
 #### 中文分词
 
@@ -121,6 +125,7 @@ dataSource 中 batchSize 属性的作用是可以在批量导入的时候限制�
 
 #### 主从部署
 Solr 复制模式，是一种在分布式环境下用于同步主从服务器的一种实现方式，因之前提到的基于 rsync 的 SOLR 不同方式部署成本过高，被 Solr 1.4 版本所替换，取而代之的就是基于 HTTP 协议的索引文件传输机制，该方式部署简单，只需配置一个文件即可。Solr 索引同步的是 Core 对 Core，以 Core 为基本同步单元。
+
 主服务器 `solrconfig.xml` 配置：
 ```xml
 <requestHandler name="/replication" class="solr.ReplicationHandler">
@@ -174,9 +179,9 @@ Solr 主从同步是通过 Slave 周期性轮询来检查 Master 的版本，如
 * 4、当同步结束后，Slave 就会删除旧的索引文件使用最新的索引。
 
 我们项目中 6.7G 的索引文件（279 万条记录），大概只用了 12 分钟左右就同步完成了，平均每秒的同步速度大约在 10M 左右。
+
 ![91e9e9cb2da5ccab496d937a539838c1.png](pics/index.png)
 ![348857920a50fb515d025af56f25578c.png](pics/indexdir.png)
-
 
 
 **注意事项：** 如果主从的数据源配置的不一致，很可能导致从服务器无法同步索引数据。
@@ -233,11 +238,12 @@ SolrJ 是 Solr 的官方客户端，文档地址：[https://lucene.apache.org/so
 ##### 在  DotNet 项目中使用 Solr
 
 SolrNet：https://github.com/mausch/SolrNet
-通过 Nuget 添加：
+
+通过 Nuget 添加 SolrNet：
 ```shell
-Install-Package SolrNet.Core
+Install-Package SolrNet
 ```
-定义索引对象：
+首先定义一个索引对象 `PostDoc`：
 ```csharp
     /// <summary>
     /// 文章 doc。
@@ -263,6 +269,10 @@ Install-Package SolrNet.Core
         [SolrField("post_date")]
         public DateTime PostDate { get; set; }
     }
+```
+在项目的 `Startup` 类中初始化 SolrNet：
+```csharp
+  SolrNet.Startup.Init<PostDoc>("http://localhost:8983/solr/posts");
 ```
 添加或更新文档操作：
 ```csharp
@@ -310,6 +320,40 @@ Install-Package SolrNet.Core
     // 提交
     ResponseHeader responseHeader = await solr.CommitAsync();
 ```
+搜索并对结果进行排序，在不传入分页参数的情况下 SolrNet 会返回所有满足条件的结果。
+```csharp
+    // 排序
+	ICollection<SortOrder> sortOrders = new List<SortOrder>() {
+	    new SortOrder("id", Order.DESC)
+	};
+	// 使用查询条件并排序
+	SolrQueryResults<PostDoc> docs = await solr.QueryAsync("post_title:索尼", sortOrders);
+```
+使用字段筛选的另一种方式：
+```csharp
+    // 使用条件查询
+    SolrQueryResults<PostDoc> posts = solr.Query(new SolrQueryByField("id", "30000"));
+```
+分页查询并对高亮关键字：
+```csharp
+    SolrQuery solrQuery = new SolrQuery("苹果");
+	QueryOptions queryOptions = new QueryOptions
+	{
+	    // 高亮关键字
+	    Highlight = new HighlightingParameters
+	    {
+	        Fields = new List<string> { "post_title" },
+	        BeforeTerm = "<font color='red'><b>",
+	        AfterTerm = "</b></font>"
+	    },
+	    // 分页
+	    StartOrCursor = new StartOrCursor.Start(pageIndex * pageSize),
+	    Rows = pageSize
+	};
+	SolrQueryResults<PostDoc> docs = await solr.QueryAsync(solrQuery, queryOptions);
+	var highlights = docs.Highlights;
+```
+高亮关键字需要在返回结果中单独获取，`docs.Highlights` 是一个 `IDictionary<string, HighlightedSnippets>` 对象，每个 `key` 对应文档的 `id`，`HighlightedSnippets` 中也是一个 `Dictionary`，存储高亮处理后的字段和内容。
 
 ##### 在 Python 项目中使用 Solr
 
