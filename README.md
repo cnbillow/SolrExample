@@ -21,8 +21,11 @@ Solr 内置了 Jetty，所以不需要任何安装任何 Web 容器即可运行�
 ```
 #### 创建 Core
 首先在 `server\solr` 文件夹中创建一个新的目录，然后将 `server\solr\configsets\_default` 下的 `conf` 目录复制到刚刚创建的文件夹。
+
 在浏览器中打开 `http://localhost:8983/solr/` 点击左侧的 `Core Admin` 添加 Core。
-![f42a5660b7a7e440347f847493d43ec2.png](en-resource://database/1272:1)
+
+![c121b45e5a65a5ce68d1bd64709d1f63.png](pics/createcore.png)
+
 `name` 和 `instanceDir` 都改成刚刚创建的目录名称。
 
 创建好之后即可在左侧的 `Core Selector` 中找到这个 Core。
@@ -30,7 +33,9 @@ Solr 内置了 Jetty，所以不需要任何安装任何 Web 容器即可运行�
 现在一个 Core 就创建好了，在 Core 的面板里可以对其进行一些基本操作。
 
 Solr 的 Api 是支持通过调用接口添加数据的，但是在实际使用中我们都是从数据库中同步数据，所以我们需要为 Solr 配置数据源。
-![d7d95cabc10595ac06aa9089548184a9.png](en-resource://database/1278:1)
+
+![c121b45e5a65a5ce68d1bd64709d1f63.png](pics/002.png)
+
 在 `solrconfig.xml` 文件中找到如下内容：
 ```xml
   <!-- Request Handlers
