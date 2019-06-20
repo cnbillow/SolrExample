@@ -24,18 +24,79 @@ dataconfig.xml 文件的大致结构如下：
 ![c121b45e5a65a5ce68d1bd64709d1f63.png](pics/dataconfig.png)
 
 #### 配置数据源
-Solr 的 Api 是支持通过调用接口添加数据的，但是在实际使用中我们都是从数据库中同步数据，所以我们需要为 Solr 配置数据源。
-
-* query 查询只对第一次全量导入有作用，对增量同步不起作用。
-* deltaQuery 的意思是，查询出所有经过修改的记录的 Id 可能是修改操作，添加操作，删除操作产生的（此查询只对增量导入起作用，而且只能返回 Id 值）
-* deletedPkQuery 此操作值查询那些数据库里伪删除的数据的 Id、solr 通过它来删除索引里面对应的数据（此查询只对增量导入起作用，而且只能返回 Id 值）。
-* deltaImportQuery 是获取以上两步的 Id，然后把其全部数据获取，根据获取的数据 对索引库进行更新操作，可能是删除，添加，修改(此查询只对增量导入起作用，可以返回多个字段的值,一般情况下，都是返回所有字段的列）。
-* parentDeltaQuery 是从本 entity 中的 deltaquery 中取得参数。
-
-##### 使用 MySQL 数据源
 
 ##### 使用 SQL Server 数据源
+从[微软官网](
+https://docs.microsoft.com/zh-cn/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server?view=sql-server-2017)下载 SQL Server 的 Microsoft SQL Server JDBC 驱动程序 4.1 驱动，复制到 `server\solr-webapp\webapp\WEB-INF\lib` 目录下。
+这里需要注意的是把在下载的文件重命名为 `sqljdbc4.jar`，我之前没有改名死活加载不上。
+使用 `com.microsoft.sqlserver.jdbc.SQLServerDriver` 驱动配置数据源：
+```xml
+<dataSource name="postData" driver="com.microsoft.sqlserver.jdbc.SQLServerDriver" url="jdbc:sqlserver://127.0.0.1:1433;SelectMethod=Cursor;DatabaseName=post;useLOBs=false;loginTimeout=60" user="charlestest" password="12345678" />
+```
+##### 使用 MySQL 数据源
 
+下载：mysql-connector-java-6.0.6.jar 复制到 `server\solr-webapp\webapp\WEB-INF\lib` 目录下。
+
+从 `dist` 目录复制 `solr-dataimporthandler-7.7.2.jar` 到 `server/solr-webapp/webapp/WEB-INF/lib` 中。
+配置 `data-config.xml`：
+```xml
+<dataConfig>
+    <dataSource name="postsData"  type="JdbcDataSource" driver="com.mysql.jdbc.Driver" url="jdbc:mysql://localhost:3306/posts?useUnicode=true&amp;useJDBCCompliantTimezoneShift=true&amp;useLegacyDatetimeCode=false&amp;serverTimezone=UTC" user="root" password="12345678" batchSize="-1" />
+    <document name="posts">
+        <entity name="Post" dataSource="postData" pk="Id" transformer="DateFormatTransformer,HTMLStripTransformer" rootEntity="true" query="SELECT Id, post_author, post_date, post_date_gmt, post_content, post_title, post_excerpt, post_status, comment_status, ping_status, post_password, post_name, to_ping, pinged, post_modified, post_modified_gmt, post_content_filtered, post_parent, guid, menu_order, post_type, post_mime_type, comment_count
+        FROM wp_posts"
+        deltaQuery="SELECT Id, post_author, post_date, post_date_gmt, post_content, post_title, post_excerpt, post_status, comment_status, ping_status, post_password, post_name, to_ping, pinged, post_modified, post_modified_gmt, post_content_filtered, post_parent, guid, menu_order, post_type, post_mime_type, comment_count
+        FROM wp_posts post_modified &gt;'${dataimporter.last_index_time}' " 
+        >
+            <field column="Id" />
+            <field column="post_author" />
+            <field column="post_date" dateTimeFormat='yyyy-MM-dd HH:mm:ss'/>
+            <field column="post_date_gmt" dateTimeFormat='yyyy-MM-dd HH:mm:ss'/>
+            <field column="post_content" />
+            <field column="post_title" />
+            <field column="post_excerpt" />
+            <field column="post_status" />
+            <field column="comment_status" />
+            <field column="ping_status" />
+            <field column="post_password" />
+            <field column="post_name" />
+            <field column="to_ping" />
+            <field column="pinged" />
+            <field column="post_modified" dateTimeFormat='yyyy-MM-dd HH:mm:ss'/>
+            <field column="post_modified_gmt" dateTimeFormat='yyyy-MM-dd HH:mm:ss'/>
+            <field column="post_content_filtered" />
+            <field column="post_parent" />
+            <field column="guid" />
+            <field column="menu_order" />
+            <field column="post_type" />
+            <field column="post_mime_type" />
+            <field column="comment_count" />
+            <entity name="PostAuthor" dataSource="authordata" pk="Id" query="SELECT Id, user_login, user_pass, user_nicename, user_email, user_url, user_registered, user_activation_key, user_status, display_name
+            FROM wp_users where id=${Post.post_author}">
+                <field column="Id" />
+                <field column="user_login"/>
+                <field column="user_pass"/>
+                <field column="user_nicename"/>
+                <field column="user_email"/>
+                <field column="user_url"/>
+                <field column="user_registered"/>
+                <field column="user_activation_key"/>
+                <field column="user_status"/>
+                <field column="display_name"/>
+            </entity>
+        </entity>
+    </document>
+</dataConfig>
+```
+entity 中的一些常用属性：
+* query：查询只对第一次全量导入有作用，对增量同步不起作用。
+* deltaQuery：的意思是，查询出所有经过修改的记录的 Id 可能是修改操作，添加操作，删除操作产生的（此查询只对增量导入起作用，而且只能返回 Id 值）
+* deletedPkQuery：此操作值查询那些数据库里伪删除的数据的 Id、solr 通过它来删除索引里面对应的数据（此查询只对增量导入起作用，而且只能返回 Id 值）。
+* deltaImportQuery：是获取以上两步的 Id，然后把其全部数据获取，根据获取的数据对索引库进行更新操作，可能是删除，添加，修改（此查询只对增量导入起作用，可以返回多个字段的值，一般情况下，都是返回所有字段的列）。
+* parentDeltaQuery：从本 entity 中的 deltaquery 中取得参数。
+
+dataSource 中 batchSize 属性的作用是可以在批量导入的时候限制连接数量。
+配置完成后重新加载一下 Core。
 
 
 #### 中文分词
